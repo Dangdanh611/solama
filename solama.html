@@ -1,0 +1,1622 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Số La Mã — Bí Mật Của Những Con Số Cổ Đại</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --ink-light: #3d2e1a;
+    --parchment: #f5edd8;
+    --parchment-dark: #e8d9b8;
+    --parchment-darker: #d4c49a;
+    --red: #8b1a1a;
+    --red-light: #b52626;
+    --gold: #c8952a;
+    --gold-light: #e8b84b;
+    --rule: #b5a07a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.8;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  /* PROGRESS BAR */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    width: 0%; z-index: 1000;
+    transition: width 0.1s linear;
+  }
+
+  /* NEWSPAPER HEADER */
+  .masthead {
+    text-align: center;
+    padding: 48px 24px 32px;
+    border-bottom: 3px double var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .masthead::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(200,149,42,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .issue-info {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .masthead h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.8rem, 7vw, 6rem);
+    font-weight: 900;
+    color: var(--red);
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    text-shadow: 3px 3px 0 rgba(139,26,26,0.15);
+  }
+
+  .masthead-sub {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    color: var(--ink-light);
+    letter-spacing: 0.05em;
+    margin-bottom: 24px;
+  }
+
+  .masthead-rule {
+    display: flex; align-items: center; gap: 16px;
+    max-width: 600px; margin: 0 auto 20px;
+  }
+  .masthead-rule::before, .masthead-rule::after {
+    content: ''; flex: 1; height: 1px; background: var(--rule);
+  }
+  .masthead-ornament {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    font-size: 18px;
+  }
+
+  .byline {
+    font-family: 'Source Serif 4', serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  /* NAVIGATION */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--ink);
+    padding: 0;
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 0;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  nav a {
+    color: var(--parchment);
+    text-decoration: none;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 14px 20px;
+    transition: background 0.2s, color 0.2s;
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  nav a:hover { background: var(--red); color: var(--gold-light); }
+
+  /* MAIN LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* LEAD SECTION */
+  .lead-section {
+    padding: 56px 0 40px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .drop-cap::first-letter {
+    font-family: 'Cinzel', serif;
+    font-size: 5.5rem;
+    font-weight: 900;
+    color: var(--red);
+    float: left;
+    line-height: 0.75;
+    margin: 8px 12px 0 0;
+    text-shadow: 2px 2px 0 rgba(139,26,26,0.2);
+  }
+
+  .lead-text {
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--ink-light);
+    font-style: italic;
+    margin-bottom: 20px;
+    line-height: 1.9;
+  }
+
+  /* SECTIONS */
+  .section {
+    padding: 48px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--parchment-darker); }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    font-weight: 700;
+    color: var(--red);
+    line-height: 1.2;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.08em;
+    margin: 32px 0 12px;
+    text-transform: uppercase;
+  }
+
+  p { margin-bottom: 16px; }
+
+  /* SYMBOL TABLE */
+  .symbol-table-wrap {
+    margin: 32px 0;
+    overflow-x: auto;
+  }
+
+  .symbol-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Serif 4', serif;
+  }
+
+  .symbol-table thead tr {
+    background: var(--ink);
+    color: var(--parchment);
+  }
+
+  .symbol-table th {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 14px 20px;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .symbol-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--parchment-darker);
+    vertical-align: middle;
+  }
+
+  .symbol-table tbody tr:nth-child(even) { background: rgba(0,0,0,0.03); }
+  .symbol-table tbody tr:hover { background: rgba(139,26,26,0.06); }
+
+  .sym {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--red);
+    letter-spacing: 0.05em;
+  }
+
+  .num {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  /* RULES BOX */
+  .rules-box {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 36px 40px;
+    margin: 32px 0;
+    position: relative;
+    border-left: 4px solid var(--gold);
+  }
+
+  .rules-box::before {
+    content: '§';
+    position: absolute; top: 20px; right: 24px;
+    font-family: 'Cinzel', serif;
+    font-size: 4rem;
+    color: rgba(200,149,42,0.15);
+    line-height: 1;
+  }
+
+  .rules-box h3 {
+    color: var(--gold-light);
+    margin-top: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+  }
+
+  .rules-box ol {
+    padding-left: 20px;
+  }
+
+  .rules-box li {
+    margin-bottom: 14px;
+    line-height: 1.7;
+    color: var(--parchment);
+  }
+
+  .rules-box li strong {
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+  }
+
+  /* EXAMPLES */
+  .examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  .example-card {
+    background: white;
+    border: 1px solid var(--parchment-darker);
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .example-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+  }
+
+  .example-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+
+  .example-card .roman {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--red);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .example-card .arabic {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .example-card .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #888;
+  }
+
+  /* PULLQUOTE */
+  .pullquote {
+    border-top: 3px solid var(--red);
+    border-bottom: 3px solid var(--red);
+    padding: 28px 0;
+    margin: 40px 0;
+    text-align: center;
+  }
+
+  .pullquote p {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.3rem, 3vw, 1.9rem);
+    font-style: italic;
+    color: var(--red);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .pullquote cite {
+    display: block;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-style: normal;
+    font-family: 'Cinzel', serif;
+  }
+
+  /* CONVERTER */
+  .converter-section {
+    background: var(--parchment-dark);
+    padding: 40px;
+    margin: 40px 0;
+    border: 1px solid var(--rule);
+    position: relative;
+  }
+
+  .converter-section h3 {
+    margin-top: 0;
+    font-size: 0.9rem;
+    color: var(--red);
+    letter-spacing: 0.15em;
+  }
+
+  .converter-row {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    align-items: flex-end; margin-top: 20px;
+  }
+
+  .conv-group { flex: 1; min-width: 180px; }
+
+  .conv-group label {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .conv-group input {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    border: 2px solid var(--rule);
+    background: var(--parchment);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .conv-group input:focus { border-color: var(--red); }
+
+  .conv-result {
+    background: var(--ink);
+    color: var(--gold-light);
+    padding: 12px 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    min-width: 180px;
+    text-align: center;
+    flex: 1;
+  }
+
+  .conv-btn {
+    background: var(--red);
+    color: var(--parchment);
+    border: none;
+    padding: 14px 28px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .conv-btn:hover { background: var(--red-light); }
+
+  /* CLOCK */
+  .roman-clock {
+    text-align: center;
+    padding: 40px 20px;
+    margin: 40px 0;
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .roman-clock::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(200,149,42,0.08) 0%, transparent 70%);
+  }
+
+  .clock-time {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 900;
+    color: var(--gold-light);
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  .clock-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: rgba(200,149,42,0.6);
+    text-transform: uppercase;
+  }
+
+  /* SUBTRACTIVE TABLE */
+  .sub-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+  }
+
+  .sub-table th, .sub-table td {
+    padding: 12px 18px;
+    border: 1px solid var(--parchment-darker);
+    text-align: center;
+  }
+
+  .sub-table th {
+    background: var(--red);
+    color: var(--parchment);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+  }
+
+  .sub-table td { font-family: 'Cinzel', serif; }
+
+  .sub-table .wrong { color: #aaa; text-decoration: line-through; }
+  .sub-table .right { color: var(--red); font-weight: 700; font-size: 1.1rem; }
+
+  /* FOOTER */
+  footer {
+    background: var(--ink);
+    color: rgba(245,237,216,0.5);
+    text-align: center;
+    padding: 40px 24px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  footer .footer-title {
+    color: var(--gold);
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    font-weight: 900;
+  }
+
+  /* TIMELINE */
+  .timeline {
+    position: relative;
+    padding: 20px 0;
+    margin: 24px 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute; left: 20px; top: 0; bottom: 0;
+    width: 2px; background: var(--rule);
+  }
+
+  .timeline-item {
+    padding: 16px 16px 16px 52px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute; left: 12px; top: 22px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 3px solid var(--parchment);
+    box-shadow: 0 0 0 2px var(--red);
+  }
+
+  .timeline-year {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .timeline-text { font-size: 0.92rem; }
+
+  /* ANIMATE ON SCROLL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 600px) {
+    nav a { padding: 10px 12px; font-size: 10px; }
+    .rules-box { padding: 24px 24px; }
+    .converter-section { padding: 28px 20px; }
+    h2 { margin-bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="issue-info">Bách Khoa Toàn Thư • Số Học Cổ Đại • MMXXVI</div>
+  <h1>SỐ LA MÃ</h1>
+  <p class="masthead-sub">Ngôn ngữ của những con số từ thời Đế chế Phương Tây</p>
+  <div class="masthead-rule"><span class="masthead-ornament">✦</span></div>
+  <div class="byline">Biên soạn bởi Ban Tri Thức Cổ Điển &nbsp;•&nbsp; Cập nhật MMXXVI</div>
+</header>
+
+<!-- NAVIGATION -->
+<nav>
+  <a href="#gioi-thieu">Giới thiệu</a>
+  <a href="#ky-hieu">Ký hiệu</a>
+  <a href="#quy-tac">Quy tắc</a>
+  <a href="#cach-viet">Cách viết</a>
+  <a href="#cach-doc">Cách đọc</a>
+  <a href="#chuyen-doi">Chuyển đổi</a>
+  <a href="#lich-su">Lịch sử</a>
+</nav>
+
+<div class="container">
+
+  <!-- LEAD -->
+  <section class="lead-section" id="gioi-thieu">
+    <p class="lead-text drop-cap">Số La Mã là hệ thống chữ số được phát minh và sử dụng bởi người La Mã cổ đại — một trong những nền văn minh vĩ đại nhất lịch sử nhân loại. Hệ thống này không dùng các chữ số 0–9 thông thường mà thay vào đó dùng bảy chữ cái Latinh đặc biệt để biểu diễn các giá trị số.</p>
+    <p>Dù ra đời từ hơn 2.000 năm trước, số La Mã vẫn hiện diện khắp nơi trong cuộc sống hiện đại: trên mặt đồng hồ, tiêu đề phim điện ảnh, chương sách, năm tổ chức Thế Vận Hội, và vô số công trình kiến trúc trên toàn thế giới.</p>
+    <p>Bài viết này sẽ dẫn bạn qua toàn bộ hệ thống số La Mã — từ bảy ký hiệu cơ bản, các quy tắc viết chính xác, cách chuyển đổi sang số Ả Rập và ngược lại, cho đến những ứng dụng thực tiễn trong đời sống ngày nay.</p>
+  </section>
+
+  <!-- KÝ HIỆU -->
+  <section class="section reveal" id="ky-hieu">
+    <div class="section-label">Phần I <span></span></div>
+    <h2>Bảy Ký Hiệu Cơ Bản</h2>
+    <p>Toàn bộ hệ thống số La Mã được xây dựng từ <strong>7 ký hiệu</strong> duy nhất, mỗi ký hiệu tương ứng với một giá trị số nhất định. Đây là nền tảng bạn cần ghi nhớ trước tiên:</p>
+
+    <div class="symbol-table-wrap">
+      <table class="symbol-table">
+        <thead>
+          <tr>
+            <th>Ký hiệu</th>
+            <th>Giá trị</th>
+            <th>Nguồn gốc</th>
+            <th>Ví dụ sử dụng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="sym">I</span></td>
+            <td><span class="num">1</span></td>
+            <td>Ngón tay đếm — một ngón</td>
+            <td>I, II, III, IV…</td>
+          </tr>
+          <tr>
+            <td><span class="sym">V</span></td>
+            <td><span class="num">5</span></td>
+            <td>Hình bàn tay xòe — khoảng chữ V giữa ngón cái và các ngón còn lại</td>
+            <td>V, VI, VII, VIII…</td>
+          </tr>
+          <tr>
+            <td><span class="sym">X</span></td>
+            <td><span class="num">10</span></td>
+            <td>Hai bàn tay chéo nhau, hoặc hai chữ V úp vào nhau</td>
+            <td>X, XI, XV, XIX…</td>
+          </tr>
+          <tr>
+            <td><span class="sym">L</span></td>
+            <td><span class="num">50</span></td>
+            <td>Có thể bắt nguồn từ ký hiệu Ψ cổ (psi), dần đơn giản hóa</td>
+            <td>L, LX, LI, LXXX…</td>
+          </tr>
+          <tr>
+            <td><span class="sym">C</span></td>
+            <td><span class="num">100</span></td>
+            <td>Chữ đầu của từ <em>Centum</em> (trăm trong tiếng Latin)</td>
+            <td>C, CC, CCC, CD…</td>
+          </tr>
+          <tr>
+            <td><span class="sym">D</span></td>
+            <td><span class="num">500</span></td>
+            <td>Nửa của ký hiệu cổ ⊕ cho 1000</td>
+            <td>D, DC, DCC, DCCC…</td>
+          </tr>
+          <tr>
+            <td><span class="sym">M</span></td>
+            <td><span class="num">1000</span></td>
+            <td>Chữ đầu của từ <em>Mille</em> (nghìn trong tiếng Latin)</td>
+            <td>M, MM, MMM…</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pullquote">
+      <p>"Với chỉ bảy ký hiệu, người La Mã đã có thể biểu diễn bất kỳ con số nào từ 1 đến 3.999."</p>
+      <cite>Nguyên tắc hệ thống La Mã</cite>
+    </div>
+  </section>
+
+  <!-- QUY TẮC -->
+  <section class="section reveal" id="quy-tac">
+    <div class="section-label">Phần II <span></span></div>
+    <h2>Năm Quy Tắc Vàng</h2>
+    <p>Việc viết số La Mã không phải tự do tùy ý. Hệ thống này tuân theo những quy tắc chặt chẽ được đúc kết qua nhiều thế kỷ. Dưới đây là năm quy tắc cốt lõi:</p>
+
+    <div class="rules-box">
+      <h3>§ Ngũ Tắc La Mã</h3>
+      <ol>
+        <li><strong>Quy tắc Cộng (Additive):</strong> Khi một ký hiệu đứng sau ký hiệu có giá trị <em>lớn hơn hoặc bằng</em> nó, cộng hai giá trị lại. Ví dụ: VI = 5 + 1 = 6; XI = 10 + 1 = 11.</li>
+        <li><strong>Quy tắc Trừ (Subtractive):</strong> Khi một ký hiệu đứng <em>trước</em> ký hiệu có giá trị lớn hơn nó, lấy hiệu. Chỉ có 6 cặp trừ được phép: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900.</li>
+        <li><strong>Quy tắc Lặp tối đa 3 lần:</strong> Một ký hiệu không được viết liên tiếp quá 3 lần. Viết IIII là sai — phải viết IV. Viết XXXX là sai — phải viết XL. <em>(Ngoại lệ: trên một số đồng hồ, IIII vẫn được dùng thay IV.)</em></li>
+        <li><strong>Không lặp V, L, D:</strong> Các ký hiệu V (5), L (50), D (500) không bao giờ được lặp lại. VV không tồn tại — phải viết X. DD không tồn tại — phải viết MM.</li>
+        <li><strong>Thứ tự từ lớn đến nhỏ:</strong> Viết từ ký hiệu có giá trị lớn nhất sang nhỏ nhất, từ trái sang phải, trừ trường hợp áp dụng quy tắc trừ.</li>
+      </ol>
+    </div>
+
+    <h3>Bảng Các Cặp Trừ Hợp Lệ</h3>
+    <table class="sub-table">
+      <thead>
+        <tr>
+          <th>Cặp La Mã</th>
+          <th>Giá trị</th>
+          <th>SAI (không viết)</th>
+          <th>ĐÚNG (phải viết)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--red)">IV</td>
+          <td>4</td>
+          <td class="wrong">IIII</td>
+          <td class="right">IV</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--red)">IX</td>
+          <td>9</td>
+          <td class="wrong">VIIII</td>
+          <td class="right">IX</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--red)">XL</td>
+          <td>40</td>
+          <td class="wrong">XXXX</td>
+          <td class="right">XL</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--red)">XC</td>
+          <td>90</td>
+          <td class="wrong">LXXXX</td>
+          <td class="right">XC</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--red)">CD</td>
+          <td>400</td>
+          <td class="wrong">CCCC</td>
+          <td class="right">CD</td>
+        </tr>
+        <tr>
+          <td style="font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--red)">CM</td>
+          <td>900</td>
+          <td class="wrong">DCCCC</td>
+          <td class="right">CM</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- CÁCH VIẾT -->
+  <section class="section reveal" id="cach-viet">
+    <div class="section-label">Phần III <span></span></div>
+    <h2>Cách Viết Số La Mã Từ 1 Đến 3999</h2>
+    <p>Bảng đầy đủ các số từ 1–20 và các mốc quan trọng, giúp bạn nắm rõ quy luật:</p>
+
+    <h3>Số 1 – 20</h3>
+    <div class="examples-grid">
+      <div class="example-card"><span class="roman">I</span><span class="arabic">1</span><span class="label">một</span></div>
+      <div class="example-card"><span class="roman">II</span><span class="arabic">2</span><span class="label">hai</span></div>
+      <div class="example-card"><span class="roman">III</span><span class="arabic">3</span><span class="label">ba</span></div>
+      <div class="example-card"><span class="roman">IV</span><span class="arabic">4</span><span class="label">bốn (5−1)</span></div>
+      <div class="example-card"><span class="roman">V</span><span class="arabic">5</span><span class="label">năm</span></div>
+      <div class="example-card"><span class="roman">VI</span><span class="arabic">6</span><span class="label">sáu (5+1)</span></div>
+      <div class="example-card"><span class="roman">VII</span><span class="arabic">7</span><span class="label">bảy</span></div>
+      <div class="example-card"><span class="roman">VIII</span><span class="arabic">8</span><span class="label">tám</span></div>
+      <div class="example-card"><span class="roman">IX</span><span class="arabic">9</span><span class="label">chín (10−1)</span></div>
+      <div class="example-card"><span class="roman">X</span><span class="arabic">10</span><span class="label">mười</span></div>
+      <div class="example-card"><span class="roman">XI</span><span class="arabic">11</span><span class="label">mười một</span></div>
+      <div class="example-card"><span class="roman">XII</span><span class="arabic">12</span><span class="label">mười hai</span></div>
+      <div class="example-card"><span class="roman">XIII</span><span class="arabic">13</span><span class="label">mười ba</span></div>
+      <div class="example-card"><span class="roman">XIV</span><span class="arabic">14</span><span class="label">mười bốn</span></div>
+      <div class="example-card"><span class="roman">XV</span><span class="arabic">15</span><span class="label">mười lăm</span></div>
+      <div class="example-card"><span class="roman">XVI</span><span class="arabic">16</span><span class="label">mười sáu</span></div>
+      <div class="example-card"><span class="roman">XVII</span><span class="arabic">17</span><span class="label">mười bảy</span></div>
+      <div class="example-card"><span class="roman">XVIII</span><span class="arabic">18</span><span class="label">mười tám</span></div>
+      <div class="example-card"><span class="roman">XIX</span><span class="arabic">19</span><span class="label">mười chín</span></div>
+      <div class="example-card"><span class="roman">XX</span><span class="arabic">20</span><span class="label">hai mươi</span></div>
+    </div>
+
+    <h3>Các Mốc Quan Trọng</h3>
+    <div class="examples-grid">
+      <div class="example-card"><span class="roman">XXX</span><span class="arabic">30</span><span class="label">ba mươi</span></div>
+      <div class="example-card"><span class="roman">XL</span><span class="arabic">40</span><span class="label">bốn mươi</span></div>
+      <div class="example-card"><span class="roman">L</span><span class="arabic">50</span><span class="label">năm mươi</span></div>
+      <div class="example-card"><span class="roman">LX</span><span class="arabic">60</span><span class="label">sáu mươi</span></div>
+      <div class="example-card"><span class="roman">XC</span><span class="arabic">90</span><span class="label">chín mươi</span></div>
+      <div class="example-card"><span class="roman">C</span><span class="arabic">100</span><span class="label">một trăm</span></div>
+      <div class="example-card"><span class="roman">CD</span><span class="arabic">400</span><span class="label">bốn trăm</span></div>
+      <div class="example-card"><span class="roman">D</span><span class="arabic">500</span><span class="label">năm trăm</span></div>
+      <div class="example-card"><span class="roman">CM</span><span class="arabic">900</span><span class="label">chín trăm</span></div>
+      <div class="example-card"><span class="roman">M</span><span class="arabic">1000</span><span class="label">một nghìn</span></div>
+      <div class="example-card"><span class="roman">MM</span><span class="arabic">2000</span><span class="label">hai nghìn</span></div>
+      <div class="example-card"><span class="roman">MMM</span><span class="arabic">3000</span><span class="label">ba nghìn</span></div>
+    </div>
+
+    <h3>Ví dụ Số Phức Tạp</h3>
+    <div class="symbol-table-wrap">
+      <table class="symbol-table">
+        <thead>
+          <tr><th>Số</th><th>Phân tích</th><th>Kết quả La Mã</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1776</strong></td>
+            <td>1000 + 700 + 70 + 6 = M + DCC + LXX + VI</td>
+            <td><span style="font-family:'Cinzel',serif;color:var(--red);font-size:1.1rem;font-weight:700">MDCCLXXVI</span></td>
+          </tr>
+          <tr>
+            <td><strong>1999</strong></td>
+            <td>1000 + 900 + 90 + 9 = M + CM + XC + IX</td>
+            <td><span style="font-family:'Cinzel',serif;color:var(--red);font-size:1.1rem;font-weight:700">MCMXCIX</span></td>
+          </tr>
+          <tr>
+            <td><strong>2024</strong></td>
+            <td>2000 + 24 = MM + XXIV</td>
+            <td><span style="font-family:'Cinzel',serif;color:var(--red);font-size:1.1rem;font-weight:700">MMXXIV</span></td>
+          </tr>
+          <tr>
+            <td><strong>2026</strong></td>
+            <td>2000 + 26 = MM + XXVI</td>
+            <td><span style="font-family:'Cinzel',serif;color:var(--red);font-size:1.1rem;font-weight:700">MMXXVI</span></td>
+          </tr>
+          <tr>
+            <td><strong>3999</strong></td>
+            <td>3000 + 900 + 90 + 9 = MMM + CM + XC + IX</td>
+            <td><span style="font-family:'Cinzel',serif;color:var(--red);font-size:1.1rem;font-weight:700">MMMCMXCIX</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CÁCH ĐỌC -->
+  <section class="section reveal" id="cach-doc">
+    <div class="section-label">Phần IV <span></span></div>
+    <h2>Cách Đọc & Phân Tích Số La Mã</h2>
+    <p>Để đọc một số La Mã, hãy thực hiện theo quy trình sau:</p>
+
+    <div class="rules-box">
+      <h3>§ Quy Trình Đọc Số La Mã</h3>
+      <ol>
+        <li><strong>Quét từ trái sang phải.</strong> Đọc lần lượt từng ký hiệu một.</li>
+        <li><strong>So sánh hai ký hiệu liền kề.</strong> Nếu ký hiệu bên phải nhỏ hơn hoặc bằng → <em>cộng</em>. Nếu ký hiệu bên phải lớn hơn → ký hiệu bên trái bị <em>trừ</em>.</li>
+        <li><strong>Tích lũy kết quả.</strong> Cộng dồn tất cả các giá trị (có thể dương hoặc âm) lại với nhau.</li>
+        <li><strong>Kiểm tra tính hợp lệ.</strong> Đảm bảo không có ký hiệu nào lặp quá 3 lần hoặc vi phạm các quy tắc đã nêu.</li>
+      </ol>
+    </div>
+
+    <h3>Ví dụ Phân Tích Từng Bước: MCMXCIX</h3>
+    <div class="symbol-table-wrap">
+      <table class="symbol-table">
+        <thead>
+          <tr><th>Vị trí</th><th>Ký hiệu</th><th>Ký hiệu tiếp theo</th><th>Phép tính</th><th>Giá trị</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><span class="sym" style="font-size:1.2rem">M</span></td>
+            <td>C (100 &lt; 1000)</td>
+            <td>+1000</td>
+            <td>1000</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><span class="sym" style="font-size:1.2rem">C</span></td>
+            <td>M (1000 &gt; 100) → trừ!</td>
+            <td>−100</td>
+            <td>900</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><span class="sym" style="font-size:1.2rem">M</span></td>
+            <td>X (10 &lt; 1000)</td>
+            <td>+1000</td>
+            <td>hoàn tất CM=900</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><span class="sym" style="font-size:1.2rem">X</span></td>
+            <td>C (100 &gt; 10) → trừ!</td>
+            <td>−10</td>
+            <td>90</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><span class="sym" style="font-size:1.2rem">C</span></td>
+            <td>I (1 &lt; 100)</td>
+            <td>+100</td>
+            <td>hoàn tất XC=90</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><span class="sym" style="font-size:1.2rem">I</span></td>
+            <td>X (10 &gt; 1) → trừ!</td>
+            <td>−1</td>
+            <td>9</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><span class="sym" style="font-size:1.2rem">X</span></td>
+            <td>(cuối)</td>
+            <td>+10</td>
+            <td>hoàn tất IX=9</td>
+          </tr>
+          <tr style="background:rgba(139,26,26,0.08)">
+            <td colspan="4" style="text-align:right;font-weight:700;font-family:'Cinzel',serif">TỔNG =</td>
+            <td><span style="font-family:'Cinzel',serif;color:var(--red);font-size:1.3rem;font-weight:900">1999</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ĐỒNG HỒ LA MÃ -->
+    <div class="roman-clock">
+      <div class="clock-label">Giờ hiện tại theo số La Mã</div>
+      <div class="clock-time" id="clockDisplay">XII : LX : LX</div>
+      <div class="clock-label" id="clockNormal">--:--:--</div>
+    </div>
+  </section>
+
+  <!-- CHUYỂN ĐỔI -->
+  <section class="section reveal" id="chuyen-doi">
+    <div class="section-label">Phần V <span></span></div>
+    <h2>Công Cụ Chuyển Đổi Trực Tiếp</h2>
+    <p>Dùng công cụ dưới đây để chuyển đổi qua lại giữa số Ả Rập và số La Mã:</p>
+
+    <div class="converter-section">
+      <h3>⚙ Chuyển Đổi Số Ả Rập → La Mã</h3>
+      <div class="converter-row">
+        <div class="conv-group">
+          <label>Nhập số (1 – 3999)</label>
+          <input type="number" id="arabicInput" placeholder="Ví dụ: 2026" min="1" max="3999" oninput="convertToRoman()">
+        </div>
+        <div class="conv-result" id="romanResult">—</div>
+      </div>
+    </div>
+
+    <div class="converter-section" style="margin-top:0;border-top:none">
+      <h3>⚙ Chuyển Đổi La Mã → Số Ả Rập</h3>
+      <div class="converter-row">
+        <div class="conv-group">
+          <label>Nhập số La Mã (VD: MMXXVI)</label>
+          <input type="text" id="romanInput" placeholder="Ví dụ: MMXXVI" oninput="convertToArabic()" style="text-transform:uppercase">
+        </div>
+        <div class="conv-result" id="arabicResult">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LỊCH SỬ -->
+  <section class="section reveal" id="lich-su">
+    <div class="section-label">Phần VI <span></span></div>
+    <h2>Lịch Sử & Ứng Dụng Ngày Nay</h2>
+    <p>Số La Mã không chỉ là di sản lịch sử — chúng vẫn sống động và hiện diện trong thế giới hiện đại:</p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-year">~500 TCN</div>
+        <div class="timeline-text">Hệ thống số La Mã bắt đầu hình thành từ các ký hiệu chữ viết của người Etruscan và sau đó được người La Mã tiếp thu, chuẩn hóa.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">~100 SCN</div>
+        <div class="timeline-text">Đế chế La Mã sử dụng số La Mã cho toàn bộ các hoạt động hành chính, thương mại, kiến trúc và ghi chép lịch sử.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">~500 SCN</div>
+        <div class="timeline-text">Sau sự sụp đổ của Đế chế Tây La Mã, số La Mã tiếp tục được dùng rộng rãi trong thế giới Kitô giáo Trung cổ.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">Thế kỷ XIII</div>
+        <div class="timeline-text">Số Ả Rập (0–9) du nhập vào châu Âu qua thương nhân và học giả Ả Rập, dần thay thế số La Mã trong tính toán thực tế.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">Hiện đại</div>
+        <div class="timeline-text">Số La Mã được dùng trong: mặt đồng hồ, phim điện ảnh (tập/phần), chương sách, nhà thờ, đài tưởng niệm, Thế Vận Hội, tên vua/hoàng đế, và nhiều biểu tượng chính thức.</div>
+      </div>
+    </div>
+
+    <h3>Ứng Dụng Phổ Biến</h3>
+    <div class="examples-grid" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))">
+      <div class="example-card"><span class="roman" style="font-size:1.2rem">MMXXIV</span><span class="label" style="margin-top:8px">Thế Vận Hội Paris 2024</span></div>
+      <div class="example-card"><span class="roman" style="font-size:1.2rem">XII</span><span class="label" style="margin-top:8px">Mặt đồng hồ</span></div>
+      <div class="example-card"><span class="roman" style="font-size:1.2rem">VII</span><span class="label" style="margin-top:8px">Phần/Tập phim</span></div>
+      <div class="example-card"><span class="roman" style="font-size:1.2rem">XIV</span><span class="label" style="margin-top:8px">Tên vua Louis XIV</span></div>
+      <div class="example-card"><span class="roman" style="font-size:1.2rem">XVI</span><span class="label" style="margin-top:8px">Chương sách</span></div>
+      <div class="example-card"><span class="roman" style="font-size:1.2rem">MCMXCIX</span><span class="label" style="margin-top:8px">Năm 1999 trên phim</span></div>
+    </div>
+
+    <div class="pullquote">
+      <p>"Số La Mã là cầu nối giữa quá khứ và hiện tại — mỗi khi bạn nhìn vào mặt đồng hồ đá hoa cương, bạn đang dùng cùng hệ thống ký hiệu mà Julius Caesar đã dùng."</p>
+      <cite>Lịch sử số học nhân loại</cite>
+    </div>
+  </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-title">MMXXVI</div>
+  <p>Bách Khoa Tri Thức Cổ Điển &nbsp;•&nbsp; Số La Mã & Lịch Sử Số Học</p>
+  <br>
+  <p style="font-size:9px;letter-spacing:0.15em">Omnia numeris sita sunt — Tất cả đều nằm trong các con số (Pythagoras)</p>
+</footer>
+
+<script>
+  // PROGRESS BAR
+  window.addEventListener('scroll', () => {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / total) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  });
+
+  // REVEAL ON SCROLL
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => obs.observe(r));
+
+  // ROMAN NUMERAL CONVERSION
+  const vals = [
+    [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],
+    [100,'C'],[90,'XC'],[50,'L'],[40,'XL'],
+    [10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']
+  ];
+
+  function toRoman(n) {
+    if (!n || n < 1 || n > 3999) return '—';
+    let result = '';
+    for (let [val, sym] of vals) {
+      while (n >= val) { result += sym; n -= val; }
+    }
+    return result;
+  }
+
+  function fromRoman(s) {
+    const map = {I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
+    s = s.toUpperCase().replace(/[^IVXLCDM]/g,'');
+    if (!s) return '—';
+    let total = 0;
+    for (let i = 0; i < s.length; i++) {
+      const cur = map[s[i]];
+      const nxt = map[s[i+1]];
+      if (!cur) return 'Không hợp lệ';
+      if (nxt && cur < nxt) total -= cur;
+      else total += cur;
+    }
+    return total > 0 ? total : 'Không hợp lệ';
+  }
+
+  function convertToRoman() {
+    const n = parseInt(document.getElementById('arabicInput').value);
+    document.getElementById('romanResult').textContent = toRoman(n) || '—';
+  }
+
+  function convertToArabic() {
+    const s = document.getElementById('romanInput').value;
+    document.getElementById('arabicResult').textContent = s ? fromRoman(s) : '—';
+  }
+
+  // ROMAN CLOCK
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours() % 12 || 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    document.getElementById('clockDisplay').textContent =
+      toRoman(h) + ' : ' + toRoman(m) + ' : ' + toRoman(s);
+    document.getElementById('clockNormal').textContent =
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(m).padStart(2,'0') + ':' +
+      String(s).padStart(2,'0');
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
